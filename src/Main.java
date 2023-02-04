@@ -3,14 +3,15 @@ import java.util.concurrent.*;
 
 public class Main {
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
         String[] texts = new String[25];
+        int max = 0;
         for (int i = 0; i < texts.length; i++) {
             texts[i] = generateText("aab", 30_000);
         }
 
         long startTs = System.currentTimeMillis(); // start time
-        List<Thread> threads = new ArrayList<>();
+        List<FutureTask<Integer>> listFuture = new ArrayList<>();
         ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (String text : texts) {
             // Создаем задачу для запуска в потоке
@@ -36,24 +37,35 @@ public class Main {
                 System.out.println(Thread.currentThread().getName() + " " + text.substring(0, 100) + " -> " + maxSize);
                 return maxSize;
             };
-            FutureTask task = new FutureTask(run); // Создаем поток
-            task.run();
-
+            FutureTask<Integer> task = new FutureTask<Integer>(run); // Создаем поток
+            listFuture.add(task);
         }
 
-            long endTs = System.currentTimeMillis(); // end time
+        for (FutureTask futureTask : listFuture) {
+            new Thread(futureTask).start();
+        }
 
-            System.out.println("Time: " + (endTs - startTs) + "ms");
+        for (FutureTask futureTask : listFuture) {
+            int curMax = (Integer) futureTask.get();
+            if (curMax > max) {
+                max = curMax;
+            }
+        }
+
+        System.out.println("Max = " + max);
+        long endTs = System.currentTimeMillis(); // end time
+
+        System.out.println("Time: " + (endTs - startTs) + "ms");
 
     }
 
-        public static String generateText (String letters,int length){
-            Random random = new Random();
-            StringBuilder text = new StringBuilder();
-            for (int i = 0; i < length; i++) {
-                text.append(letters.charAt(random.nextInt(letters.length())));
-            }
-            return text.toString();
+    public static String generateText(String letters, int length) {
+        Random random = new Random();
+        StringBuilder text = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            text.append(letters.charAt(random.nextInt(letters.length())));
         }
+        return text.toString();
+    }
 
 }

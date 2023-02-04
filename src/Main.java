@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.concurrent.*;
 
 public class Main {
 
@@ -10,9 +11,10 @@ public class Main {
 
         long startTs = System.currentTimeMillis(); // start time
         List<Thread> threads = new ArrayList<>();
+        ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         for (String text : texts) {
             // Создаем задачу для запуска в потоке
-            Runnable run = () -> {
+            Callable run = () -> {
                 int maxSize = 0;
                 for (int i = 0; i < text.length(); i++) {
                     for (int j = 0; j < text.length(); j++) {
@@ -32,27 +34,26 @@ public class Main {
                     }
                 }
                 System.out.println(Thread.currentThread().getName() + " " + text.substring(0, 100) + " -> " + maxSize);
+                return maxSize;
             };
-            Thread task = new Thread(run); // Создаем поток
-            threads.add(task); // Добавляем поток в список
-            task.start(); // Стартуем поток
-        }
-        // ожидание запущенных потоков основным потоком программы
-        for (Thread thread : threads) {
-            thread.join();
+            FutureTask task = new FutureTask(run); // Создаем поток
+            task.run();
+
         }
 
-        long endTs = System.currentTimeMillis(); // end time
+            long endTs = System.currentTimeMillis(); // end time
 
-        System.out.println("Time: " + (endTs - startTs) + "ms");
+            System.out.println("Time: " + (endTs - startTs) + "ms");
+
     }
 
-    public static String generateText(String letters, int length) {
-        Random random = new Random();
-        StringBuilder text = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            text.append(letters.charAt(random.nextInt(letters.length())));
+        public static String generateText (String letters,int length){
+            Random random = new Random();
+            StringBuilder text = new StringBuilder();
+            for (int i = 0; i < length; i++) {
+                text.append(letters.charAt(random.nextInt(letters.length())));
+            }
+            return text.toString();
         }
-        return text.toString();
-    }
+
 }
